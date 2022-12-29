@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "adi_mac.h": "c",
+        "pbuf.h": "c",
+        "etharp.h": "c",
+        "adin2111.h": "c",
+        "lwip_adin2111_app.h": "c",
+        "httpd_opts.h": "c",
+        "lwipopts.h": "c",
+        "rndis_protocol.h": "c",
+        "tusb.h": "c",
+        "tusb_option.h": "c"
+    }
+}
