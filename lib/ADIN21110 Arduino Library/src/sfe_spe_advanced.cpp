@@ -19,7 +19,7 @@ adi_eth_Result_e sfe_spe_advanced::begin(uint8_t cs_pin)
     }
 
     BSP_HWReset(true);
-
+    adin2111_Disable(hDevice);
     for (uint32_t i = 0; i < ADIN2111_INIT_ITER; i++)
     {
         result = init(&drvConfig);

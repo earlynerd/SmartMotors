@@ -74,8 +74,12 @@ void SinglePairEthernet::rxCallback(void *pCBParam, uint32_t Event, void *pArg)
     {
         if(pRxBufDesc->trxSize > SPE_FRAME_HEADER_SIZE)
         userRxCallback(&pRxBufDesc->pBuf[SPE_FRAME_HEADER_SIZE], (pRxBufDesc->trxSize - SPE_FRAME_HEADER_SIZE), &pRxBufDesc->pBuf[SPE_MAC_SIZE] );
-        submitRxBuffer(pRxBufDesc);
+        
+        pRxBufDesc->cbFunc = rxCallback_C_Compatible;
+        registerCallback(rxBufDesc[i].cbFunc, ADI_MAC_EVT_RX_FRAME_RDY);
         rxBufAvailable[i] = false;
+        submitRxBuffer(pRxBufDesc);
+        
     }
 }
 
@@ -133,7 +137,7 @@ adi_eth_Result_e SinglePairEthernet::enableDefaultBehavior()
     adi_eth_Result_e result = ADI_ETH_SUCCESS;
     int i = 0;
     uint8_t  brcstMAC[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
-    uint8_t filter = 0;
+    uint8_t filter[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
     adi_mac_AddressRule_t   addrRule;
 
     if(result == ADI_ETH_SUCCESS)
@@ -143,7 +147,7 @@ adi_eth_Result_e SinglePairEthernet::enableDefaultBehavior()
         addrRule.APPLY2PORT1 = 1;
         addrRule.APPLY2PORT2 = 1;
         addrRule.TO_HOST = 1;
-        result = addAddressFilter(brcstMAC, &filter, addrRule);
+        result = addAddressFilter(brcstMAC, filter, addrRule);
     }
 
     if(result == ADI_ETH_SUCCESS)
@@ -152,7 +156,7 @@ adi_eth_Result_e SinglePairEthernet::enableDefaultBehavior()
         addrRule.APPLY2PORT1 = 1;
         addrRule.APPLY2PORT2 = 1;
         addrRule.TO_HOST = 1;
-        result = addAddressFilter(macAddr, &filter, addrRule);
+        result = addAddressFilter(macAddr, filter, addrRule);
     }
 
     if(result == ADI_ETH_SUCCESS)

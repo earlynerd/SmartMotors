@@ -8,10 +8,11 @@
 // #include "adin2111.h"
 // #include "boardsupport.h"
 // #include <Updater.h>
+#include <SPI.h>
 #include "Adafruit_TinyUSB.h"
 #include "SparkFun_SinglePairEthernet.h"
-#include "usb_network.h"
-#include <SPI.h>
+#include "adin2111.h"
+#include "boardsupport.h"
 
 #define SPI0_MISO 16
 #define SPI0_MOSI 19
@@ -48,13 +49,13 @@ volatile int rxLen = 0;
 
 SinglePairEthernet adin;
 byte deviceMAC[6] = {0x08, 0x3A, 0x88, 0x5C, 0x18, 0x50};
-byte destinationMAC[6] = {0x08, 0x3A, 0x88, 0x5C, 0x18, 0x4F};
+byte destinationMAC[6] = {0x08, 0x3A, 0x88, 0x5C, 0x18, 0x4f};
 
 static void rxCallback(byte *data, int dataLen, byte *senderMac)
 {
   if(!newDat)
   {
-    memcpy((byte*)buffer, data, sizeof(buffer));
+    memcpy((byte*)buffer, data, dataLen);
     memcpy((byte*)sendMacAddr, senderMac, 6);
     newDat = true;
     rxLen = dataLen;
@@ -76,7 +77,7 @@ void setup()
   digitalWrite(NET_RESET_PIN, HIGH);
   Serial.begin(115200);
   SPI.begin();
-  delay(5000);
+  //delay(5000);
   pinMode(GREEN_LED_PIN, OUTPUT);
   pinMode(RED_LED_PIN, OUTPUT);
   pinMode(BLUE_LED_PIN, OUTPUT);
@@ -169,14 +170,14 @@ void loop()
     }
 
   */
-  if (millis() - lastTx > 100)
+  if (millis() - lastTx > 4000)
   {
     lastTx = millis();
-    uint8_t dat[] = "hello world\r\n";
+    uint8_t dat[] = "hello world\r\nhello world\r\nhello world\r\nhello world\r\nhello world\r\nhello world\r\nhello world\r\nhello world\r\nhello world\r\nhello world\r\n";
     digitalWrite(GREEN_LED_PIN, HIGH);
     //adin.setMac(deviceMAC);
     //adin.setDestMac(destinationMAC);
-    adin.sendData(ADIN2111_TX_PORT_FLOOD, dat, 14, destinationMAC);
+    adin.sendData(ADIN2111_TX_PORT_FLOOD, dat, sizeof(dat), destinationMAC);
     digitalWrite(GREEN_LED_PIN, LOW);
   }
   int numBufsAvailable = adin.getRxAvailable();
