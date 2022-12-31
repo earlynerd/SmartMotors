@@ -6,6 +6,11 @@
 */
 
 #include "sfe_spe_advanced.h"
+#define ADIN2111
+
+#define SPI_OA_EN
+#define SPI_PROT_EN
+
 
 const int ADIN2111_INIT_ITER = 5;
 
@@ -19,7 +24,7 @@ adi_eth_Result_e sfe_spe_advanced::begin(uint8_t cs_pin)
     }
 
     BSP_HWReset(true);
-    adin2111_Disable(hDevice);
+    //adin2111_Disable(hDevice);
     for (uint32_t i = 0; i < ADIN2111_INIT_ITER; i++)
     {
         result = init(&drvConfig);
@@ -28,7 +33,7 @@ adi_eth_Result_e sfe_spe_advanced::begin(uint8_t cs_pin)
             break;
         }
     }
-
+    if(result != ADI_ETH_SUCCESS) Serial.println("init fail");
     return result;
 }
 
@@ -44,8 +49,8 @@ adi_eth_Result_e sfe_spe_advanced::begin(uint8_t status, uint8_t interrupt, uint
     }
 
     BSP_HWReset(true);
-    adin2111_DisablePort(hDevice, ADIN2111_PORT_1);
-    adin2111_DisablePort(hDevice, ADIN2111_PORT_2);
+    //adin2111_DisablePort(hDevice, ADIN2111_PORT_1);
+    //adin2111_DisablePort(hDevice, ADIN2111_PORT_2);
     
     //adin2111_Disable(hDevice);
     for (uint32_t i = 0; i < ADIN2111_INIT_ITER; i++)
@@ -137,7 +142,7 @@ adi_eth_Result_e    sfe_spe_advanced::submitTxBuffer          (adin2111_TxPort_e
 
 adi_eth_Result_e    sfe_spe_advanced::submitRxBuffer          (adi_eth_BufDesc_t *pBufDesc)
 {
-    registerCallback(pBufDesc->cbFunc, ADI_MAC_EVT_RX_FRAME_RDY);
+    //registerCallback(pBufDesc->cbFunc, ADI_MAC_EVT_RX_FRAME_RDY);
     return adin2111_SubmitRxBuffer(hDevice, pBufDesc);
 
 }
@@ -180,6 +185,13 @@ adi_eth_Result_e    sfe_spe_advanced::getCutThroughMode       (bool *pTxcte, boo
 {
     return adin2111_GetCutThroughMode(hDevice, pTxcte, pRxcte, p2pcte);
 }
+
+adi_eth_Result_e    sfe_spe_advanced::setPortForwardingMode       (adin2111_Port_e port, bool bFlag)
+{
+    return adin2111_SetPortForwardMode(hDevice, port, bFlag);
+}
+
+
 
 adi_eth_Result_e    sfe_spe_advanced::setFifoSizes            (adi_mac_FifoSizes_t fifoSizes)
 {

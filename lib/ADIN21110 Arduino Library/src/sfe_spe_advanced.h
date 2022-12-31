@@ -9,14 +9,17 @@
 
 #include <SPI.h>
 //#include "adin1110.h"
+
+
 #include "adin2111.h"
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
 #else
 #include "WProgram.h"
 #endif
-//#define SPI_OA_EN
-#define SPI_CRC_EN
+#define SPI_OA_EN
+#define SPI_PROT_EN
+//#define 
 
 class sfe_spe_advanced
 {
@@ -60,6 +63,7 @@ public:
     #endif
     adi_eth_Result_e    setCutThroughMode       (bool txcte, bool rxcte, bool p2pcte);
     adi_eth_Result_e    getCutThroughMode       (bool *pTxcte, bool *pRxcte, bool *p2pcte);
+    adi_eth_Result_e    setPortForwardingMode   (adin2111_Port_e port, bool bFlag);
     adi_eth_Result_e    setFifoSizes            (adi_mac_FifoSizes_t fifoSizes);
     adi_eth_Result_e    getFifoSizes            (adi_mac_FifoSizes_t *pFifoSizes);
     adi_eth_Result_e    clearFifos              (adi_mac_FifoClrMode_e clearMode);

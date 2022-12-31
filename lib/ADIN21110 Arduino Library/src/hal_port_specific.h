@@ -27,7 +27,7 @@
 #define ADIN2111
 //#define MDIO_GPIO
 // #include "stm32l4s5xx.h"
-// #include "boardsupport.h"
+#include "boardsupport.h"
 
 #ifdef __cplusplus
 extern "C" {

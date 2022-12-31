@@ -76,6 +76,8 @@ uint32_t HAL_PhyWrite(uint8_t hwAddr, uint32_t RegAddr, uint16_t data)
 
 uint32_t HAL_DisableIrq(void)
 {
+    //BSP_disableInterrupts();
+    //BSP_DisableIRQ();
     return ADI_HAL_SUCCESS; //TODO
      //HAL_INT_N_DisableIRQ();
 
@@ -84,10 +86,11 @@ uint32_t HAL_DisableIrq(void)
 
 uint32_t HAL_EnableIrq(void)
 {
-    return ADI_HAL_SUCCESS; //TODO
-    // HAL_INT_N_EnableIRQ();
+    //return ADI_HAL_SUCCESS; //TODO
+    //HAL_INT_N_EnableIRQ();
+    //BSP_EnableIRQ();
 
-    // return ADI_HAL_SUCCESS;
+     return ADI_HAL_SUCCESS;
 }
 
 uint32_t HAL_SetPendingIrq(void)

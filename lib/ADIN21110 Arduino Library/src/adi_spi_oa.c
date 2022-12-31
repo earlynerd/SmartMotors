@@ -16,7 +16,8 @@
 
 
 #include "adi_spi_oa.h"
-
+#define SPI_OA_EN
+#define SPI_PROT_EN
 #if defined(SPI_OA_EN)
 /*! Size of data buffer used in SPI transactions, in bytes. */
 #define BUFFERSIZE 2000

@@ -19,6 +19,9 @@
 #include "adi_phy.h"
 #include "adi_mac.h"
 
+#define SPI_OA_EN
+#define SPI_PROT_EN
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

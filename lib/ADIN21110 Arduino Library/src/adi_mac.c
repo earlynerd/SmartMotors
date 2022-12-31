@@ -8,14 +8,15 @@
  *
  *---------------------------------------------------------------------------
  */
-
 #include "adi_mac.h"
+#define SPI_OA_EN
+#define SPI_PROT_EN
 #if defined(SPI_OA_EN)
 #include "adi_spi_oa.h"
 #else
 #include "adi_spi_generic.h"
 #endif
-
+#define ADIN2111
 #define PSEUDO_MODULO(N, D) (((N) < (D)) ? (N) : ((N) - (D)))
 
 #define DWORD               (4)
@@ -443,6 +444,12 @@ end:
     {
         hDevice->irqMask1 = irqMask1;
     }
+    else
+    {
+        char message[] = "fail somewhere in MacCallback";
+        memcpy(aDebugString, message, sizeof(message));
+        msgWrite(aDebugString);
+    } 
 
 }
 #else
@@ -618,25 +625,38 @@ static adi_eth_Result_e macInit(adi_mac_Device_t *hDevice)
 
     if (result != ADI_ETH_SUCCESS)
     {
-        goto end;
+
+        char message[] = "fail writing irqmask1";
+        memcpy(aDebugString, message, sizeof(message));
+        msgWrite(aDebugString);
+        //goto end;
     }
 
     /* Although the callback is registered here,  */
     result = (adi_eth_Result_e)ADI_HAL_REGISTER_CALLBACK(hDevice->adinDevice, (HAL_Callback_t const *)macCallback, hDevice);
     if (result != ADI_ETH_SUCCESS)
     {
-        goto end;
+        char message[] = "fail attaching irq callback";
+        memcpy(aDebugString, message, sizeof(message));
+        msgWrite(aDebugString);
+        //goto end;
     }
 
     result = MAC_ReadRegister(hDevice, ADDR_MAC_STATUS0, &val32);
     if (result != ADI_ETH_SUCCESS)
     {
-        goto end;
+        char message[] ="fail status0";
+        memcpy(aDebugString, message, sizeof(message));
+        msgWrite(aDebugString);
+        //goto end;
     }
     result = MAC_ReadRegister(hDevice, ADDR_MAC_STATUS1, &val32);
     if (result != ADI_ETH_SUCCESS)
     {
-        goto end;
+        char message[] = "fail reading status1";
+        memcpy(aDebugString, message, sizeof(message));
+        msgWrite(aDebugString);
+        //goto end;
     }
 
     /* Configure the MAC to generate and append FCS to the frame, or expect the FCS to be appended by the host */
@@ -645,14 +665,22 @@ static adi_eth_Result_e macInit(adi_mac_Device_t *hDevice)
         result = (adi_eth_Result_e)ADI_HAL_FCS_INIT(hDevice->adinDevice);
         if (result != ADI_ETH_SUCCESS)
         {
-            goto end;
+            char message[] = "fail init FCS";
+            memcpy(aDebugString, message, sizeof(message));
+            msgWrite(aDebugString);
+   
+            //goto end;
         }
     }
 
     result = MAC_ReadRegister(hDevice, ADDR_MAC_CONFIG0, &val32);
     if (result != ADI_ETH_SUCCESS)
     {
-        goto end;
+        char message[] = "fail reading mac config 0";
+        memcpy(aDebugString, message, sizeof(message));
+        msgWrite(aDebugString);
+
+        //goto end;
     }
 
     if (hDevice->fcsCheckEn)
@@ -667,13 +695,22 @@ static adi_eth_Result_e macInit(adi_mac_Device_t *hDevice)
     result = MAC_WriteRegister(hDevice, ADDR_MAC_CONFIG0, val32);
     if (result != ADI_ETH_SUCCESS)
     {
-        goto end;
+        char message[] = "fail writing config0";
+        memcpy(aDebugString, message, sizeof(message));
+        msgWrite(aDebugString);
+     
+        //goto end;
     }
 
     result = MAC_ReadRegister(hDevice, ADDR_MAC_CONFIG2, &val32);
     if (result != ADI_ETH_SUCCESS)
     {
-        goto end;
+
+        char message[] ="fail reading config2";
+        memcpy(aDebugString, message, sizeof(message));
+        msgWrite(aDebugString);
+
+        //goto end;
     }
 
     if (hDevice->fcsCheckEn)
@@ -687,7 +724,11 @@ static adi_eth_Result_e macInit(adi_mac_Device_t *hDevice)
     result = MAC_WriteRegister(hDevice, ADDR_MAC_CONFIG2, val32);
     if (result != ADI_ETH_SUCCESS)
     {
-        goto end;
+        char message[] = "fail writing config2";
+        memcpy(aDebugString, message, sizeof(message));
+        msgWrite(aDebugString);
+
+        //goto end;
     }
 
 end:

@@ -9,6 +9,10 @@
         "lwipopts.h": "c",
         "rndis_protocol.h": "c",
         "tusb.h": "c",
-        "tusb_option.h": "c"
+        "tusb_option.h": "c",
+        "type_traits": "cpp",
+        "hal_port_specific.h": "c",
+        "arduino.h": "c",
+        "adi_spi_oa.h": "c"
     }
 }

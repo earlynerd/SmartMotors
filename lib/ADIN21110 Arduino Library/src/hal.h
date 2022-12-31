@@ -22,6 +22,7 @@
 
 #include "adi_eth_common.h"
 #include "hal_port_specific.h"
+#define ADIN2111
 
 #ifdef __cplusplus
 extern "C" {

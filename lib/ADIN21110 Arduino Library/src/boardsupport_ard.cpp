@@ -30,7 +30,7 @@ rtos::Semaphore updates(0);
 #endif
 
 #define RESET_DELAY       (5)
-#define AFTER_RESET_DELAY (100)
+#define AFTER_RESET_DELAY (500)
 
 static          ADI_CB gpfSpiCallback = NULL;
 static void     *gpSpiCBParam = NULL;
@@ -66,15 +66,15 @@ void BSP_getConfigPins(uint16_t *value) { /* This board has no config pins, so o
 
 void BSP_disableInterrupts(void)
 {
-    noInterrupts();
+    interrupts();
     
 }
 
 
 void BSP_enableInterrupts(void)
 {
-
     interrupts();
+    if(!digitalRead(interrupt_pin)) BSP_IRQCallback();
 }
 
 /*
@@ -167,7 +167,7 @@ uint32_t BSP_spi2_write_and_read(uint8_t *pBufferTx, uint8_t *pBufferRx, uint32_
     #endif
 
     memcpy(pBufferRx, pBufferTx, nbBytes);
-    SPI_instance->beginTransaction(SPISettings(60000000, MSBFIRST, SPI_MODE0));
+    SPI_instance->beginTransaction(SPISettings(35000000, MSBFIRST, SPI_MODE0));
     bspLedSet(chip_select_pin, LOW);
     SPI_instance->transfer(pBufferRx, nbBytes);
     //Driver expects there to be an interrupt that fires after completion
@@ -185,7 +185,17 @@ uint32_t BSP_spi2_write_and_read(uint8_t *pBufferTx, uint8_t *pBufferRx, uint32_
 
     return 0;
 }
+/*
+void BSP_EnableIRQ()
+{
+    attachInterrupt(interrupt_pin, BSP_IRQCallback, FALLING);
+}
 
+void BSP_DisableIRQ()
+{
+    detachInterrupt(interrupt_pin);
+}
+*/
 //Function called on SPI transaction completion
 void SPI_TxRxCpltCallback(void)
 {
@@ -225,7 +235,8 @@ uint32_t BSP_RegisterIRQCallback(ADI_CB const *intCallback, void * hDevice)
     gpfGPIOIntCallback = (ADI_CB)intCallback;
     gpGPIOIntCBParam = hDevice ;
 
-    attachInterrupt(digitalPinToInterrupt(interrupt_pin), BSP_IRQCallback, FALLING);
+    attachInterrupt(interrupt_pin, BSP_IRQCallback, FALLING);
+    //BSP_IRQCallback();
     return 0;
 }
 
@@ -255,7 +266,7 @@ void thread_fn( void ){
 //Outside of mbed cores, we just call the callback within the ISR
 void BSP_IRQCallback()
 {
-    if (gpfGPIOIntCallback)
+    if (gpfGPIOIntCallback != NULL)
     {
         (*gpfGPIOIntCallback)(gpGPIOIntCBParam, 0, NULL);
     }
@@ -277,7 +288,7 @@ uint32_t BSP_InitSystem(void)
 #endif
     SPI_instance->begin();
     pinMode(status_led_pin, OUTPUT);
-    pinMode(interrupt_pin, INPUT);
+    pinMode(interrupt_pin, INPUT_PULLUP);
     pinMode(reset_pin, OUTPUT);
     pinMode(chip_select_pin, OUTPUT);
     digitalWrite(chip_select_pin, HIGH);
@@ -306,7 +317,7 @@ uint32_t BSP_ConfigSystemCS(uint8_t chip_select)
 uint32_t msgWrite(char * ptr)
 {
     //if(Serial){
-    //Serial.print(ptr);
+    Serial.print(ptr);
     //}
     return 0;
 }
@@ -315,7 +326,7 @@ char aDebugString[150u];
 
 void common_Fail(char *FailureReason)
 {
-    digitalWrite(26, HIGH);
+    //digitalWrite(26, HIGH);
     char fail[] = "Failed: ";
     char term[] = "\n\r";
 

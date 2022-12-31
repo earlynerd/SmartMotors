@@ -523,7 +523,7 @@ adi_eth_Result_e adin1110_SubmitRxBufferHp(adin1110_DeviceHandle_t hDevice, adi_
  *
  * @sa              adin1110_GetChunkSize()
  */
-adi_eth_Result_e adin1110_SetChunkSize(adin1110_DeviceHandle_t hDevice, adi_mac_OaCps_e cps)
+adi_eth_Result_e adin1110_SetChunkSize(adin21110_DeviceHandle_t hDevice, adi_mac_OaCps_e cps)
 {
     return macDriverEntry.SetChunkSize(hDevice->pMacDevice, cps);
 }

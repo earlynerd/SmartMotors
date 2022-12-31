@@ -8,12 +8,6 @@
  *
  *---------------------------------------------------------------------------
  */
-/*
- * This file has been ported from its original location to be included with
- * the SparkFun ADIN1110 Arduino driver, its contents may have been changed
- * from its original form.
-*/
-
 
 /** @addtogroup mac MAC Definitions
  *  @{
@@ -22,20 +16,19 @@
 #ifndef ADI_MAC_H
 #define ADI_MAC_H
 
-#define ADIN2111
-#define CRC_EN
-//#define ADIN1110
-
-//#define SPI_OA_EN
-//#define SPI_PROT_EN
-
+#define SPI_OA_EN
+#define SPI_PROT_EN
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 
+#define ADIN2111
+#define PROT_EN
+
 /* The PHY registers are included because the MAC code has to access */
 /* interrupt status registers from the PHY.                          */
+
 #if defined(ADIN1110)
 #include "ADIN1110_mac_addr_rdef.h"
 #include "ADIN1110_mac_typedefs.h"
@@ -93,8 +86,8 @@ extern "C" {
 #endif
 
 /*! Size of the MAC device structure, in bytes. Needs to be a multiple of 4. Note the actual size will depend on packing of non-uint32_t members.*/
-// #define ADI_MAC_DEVICE_SIZE             (ADI_MAC_DEVICE_SIZE_COMMON + ADI_MAC_DEVICE_SIZE_QUEUE_HI + ADI_MAC_DEVICE_SIZE_OA)
-#define ADI_MAC_DEVICE_SIZE             sizeof(adi_mac_Device_t)
+ #define ADI_MAC_DEVICE_SIZE             (ADI_MAC_DEVICE_SIZE_COMMON + ADI_MAC_DEVICE_SIZE_QUEUE_HI + ADI_MAC_DEVICE_SIZE_OA)
+//#define ADI_MAC_DEVICE_SIZE             sizeof(adi_mac_Device_t)
 
 /*! MAC address filter table entries that allow usage of a mask. */
 #define ADI_MAC_ADDR_MASK_MAX           (2)
@@ -406,8 +399,8 @@ typedef struct
  */
 typedef enum
 {
-    ADI_MAC_RX_FIFO_SIZE_2K  = (MAC_FIFO_SIZE_P1_RX_HI_SIZE_RXSIZE_2K),
     ADI_MAC_RX_FIFO_SIZE_0K  = (MAC_FIFO_SIZE_P1_RX_HI_SIZE_RXSIZE_0K),
+    ADI_MAC_RX_FIFO_SIZE_2K  = (MAC_FIFO_SIZE_P1_RX_HI_SIZE_RXSIZE_2K),
     ADI_MAC_RX_FIFO_SIZE_4K  = (MAC_FIFO_SIZE_P1_RX_HI_SIZE_RXSIZE_4K),
     ADI_MAC_RX_FIFO_SIZE_6K  = (MAC_FIFO_SIZE_P1_RX_HI_SIZE_RXSIZE_6K),
     ADI_MAC_RX_FIFO_SIZE_8K  = (MAC_FIFO_SIZE_P1_RX_HI_SIZE_RXSIZE_8K),

@@ -11,6 +11,9 @@
 
 #include "adin2111.h"
 
+#define SPI_OA_EN
+#define SPI_PROT_EN
+
 /** @addtogroup adin2111 ADIN2111 LES Software Driver
  *  @{
  */
@@ -104,6 +107,7 @@ adi_eth_Result_e adin2111_Init(adin2111_DeviceHandle_t hDevice, adin2111_DriverC
     phyDrvConfig[ADIN2111_PORT_1].pDevMem = (void *)((uint8_t *)pCfg->pDevMem + ADI_MAC_DEVICE_SIZE);
     phyDrvConfig[ADIN2111_PORT_1].devMemSize = ADI_PHY_DEVICE_SIZE;
     phyDrvConfig[ADIN2111_PORT_1].enableIrq  = false;
+    
 
     phyDrvConfig[ADIN2111_PORT_2].addr = 2;
     phyDrvConfig[ADIN2111_PORT_2].pDevMem = (void *)((uint8_t *)pCfg->pDevMem + ADI_MAC_DEVICE_SIZE + ADI_PHY_DEVICE_SIZE);
@@ -111,7 +115,7 @@ adi_eth_Result_e adin2111_Init(adin2111_DeviceHandle_t hDevice, adin2111_DriverC
     phyDrvConfig[ADIN2111_PORT_2].enableIrq  = false;
 
     pDeviceHandle = hDevice;
-    adin2111_Disable(hDevice);
+    //adin2111_Disable(hDevice);
     /* Initialize MAC */
     result = macDriverEntry.Init(&hDevice->pMacDevice, &macDrvConfig, (void *)hDevice);
     if (result != ADI_ETH_SUCCESS)
@@ -149,6 +153,8 @@ adi_eth_Result_e adin2111_Init(adin2111_DeviceHandle_t hDevice, adin2111_DriverC
     }
     macConfig2.P1_FWD_UNK2P2 = 1;
     macConfig2.P2_FWD_UNK2P1 = 1;
+    macConfig2.P1_FWD_UNK2HOST = 1;
+    macConfig2.P2_FWD_UNK2HOST = 1;
     macConfig2.PORT_CUT_THRU_EN = 0;
     result = adin2111_WriteRegister(hDevice, ADDR_MAC_CONFIG2, macConfig2.VALUE32);
     if (result != ADI_ETH_SUCCESS)
@@ -185,7 +191,9 @@ adi_eth_Result_e adin2111_Init(adin2111_DeviceHandle_t hDevice, adin2111_DriverC
     {
         goto end;
     }
-
+ 
+    phyDriverEntry.LedBlinkTime(hDevice->pPhyDevice[ADIN2111_PORT_1], ADI_PHY_LED_0, 10, 10);
+    phyDriverEntry.LedBlinkTime(hDevice->pPhyDevice[ADIN2111_PORT_2], ADI_PHY_LED_1, 10, 10);
     /* Now enable the PHY interrupt sources in the MAC status registers */
     hDevice->pMacDevice->irqMask0 &= ~BITM_MAC_IMASK0_PHYINTM;
     result = adin2111_WriteRegister(hDevice, ADDR_MAC_IMASK0, hDevice->pMacDevice->irqMask0);
