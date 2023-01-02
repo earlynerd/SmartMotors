@@ -29,7 +29,7 @@ rtos::Thread thread;
 rtos::Semaphore updates(0);
 #endif
 
-#define RESET_DELAY       (5)
+#define RESET_DELAY       (50)
 #define AFTER_RESET_DELAY (500)
 
 static          ADI_CB gpfSpiCallback = NULL;
@@ -66,7 +66,7 @@ void BSP_getConfigPins(uint16_t *value) { /* This board has no config pins, so o
 
 void BSP_disableInterrupts(void)
 {
-    interrupts();
+    noInterrupts();
     
 }
 
@@ -74,7 +74,7 @@ void BSP_disableInterrupts(void)
 void BSP_enableInterrupts(void)
 {
     interrupts();
-    if(!digitalRead(interrupt_pin)) BSP_IRQCallback();
+    //if(!digitalRead(interrupt_pin)) BSP_IRQCallback();
 }
 
 /*
@@ -84,9 +84,9 @@ void BSP_delayMs(uint32_t delayms)
 {
     uint32_t now;
     uint32_t checkTime  = millis();
-    //delay(delayms);
+    delay(delayms);
     /* Read SysTick Timer every Ms*/
-    
+    /*
     while (1)
     {
       now  = millis();
@@ -96,6 +96,7 @@ void BSP_delayMs(uint32_t delayms)
        }
        else yield();
     }
+    */
     
     
 }
@@ -167,7 +168,7 @@ uint32_t BSP_spi2_write_and_read(uint8_t *pBufferTx, uint8_t *pBufferRx, uint32_
     #endif
 
     memcpy(pBufferRx, pBufferTx, nbBytes);
-    SPI_instance->beginTransaction(SPISettings(35000000, MSBFIRST, SPI_MODE0));
+    SPI_instance->beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE0));
     bspLedSet(chip_select_pin, LOW);
     SPI_instance->transfer(pBufferRx, nbBytes);
     //Driver expects there to be an interrupt that fires after completion
@@ -185,7 +186,7 @@ uint32_t BSP_spi2_write_and_read(uint8_t *pBufferTx, uint8_t *pBufferRx, uint32_
 
     return 0;
 }
-/*
+
 void BSP_EnableIRQ()
 {
     attachInterrupt(interrupt_pin, BSP_IRQCallback, FALLING);
@@ -195,7 +196,7 @@ void BSP_DisableIRQ()
 {
     detachInterrupt(interrupt_pin);
 }
-*/
+
 //Function called on SPI transaction completion
 void SPI_TxRxCpltCallback(void)
 {
@@ -287,7 +288,7 @@ uint32_t BSP_InitSystem(void)
     thread.set_priority(osPriorityHigh);
 #endif
     SPI_instance->begin();
-    pinMode(status_led_pin, OUTPUT);
+    //pinMode(status_led_pin, OUTPUT);
     pinMode(interrupt_pin, INPUT_PULLUP);
     pinMode(reset_pin, OUTPUT);
     pinMode(chip_select_pin, OUTPUT);
@@ -297,9 +298,9 @@ uint32_t BSP_InitSystem(void)
 }
 
 //Set all the pins that are uysed throughout this module
-uint32_t BSP_ConfigSystem(uint8_t status, uint8_t interrupt, uint8_t reset, uint8_t chip_select)
+uint32_t BSP_ConfigSystem(uint8_t interrupt, uint8_t reset, uint8_t chip_select)
 {
-    status_led_pin = status;
+    
     interrupt_pin = interrupt;
     reset_pin = reset;
     chip_select_pin = chip_select;

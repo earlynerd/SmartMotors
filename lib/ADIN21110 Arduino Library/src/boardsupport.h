@@ -106,12 +106,13 @@ typedef void (* ADI_CB) (  /*!< Callback function pointer */
 //These function names are provided by the driver provided by analog devices
 //No changes were made to the API provided by this module, functions that dont make sense are left blank
 uint32_t        BSP_InitSystem                  (void);
-uint32_t        BSP_ConfigSystem                (uint8_t status, uint8_t interrupt, uint8_t reset, uint8_t chip_select);
+uint32_t        BSP_ConfigSystem                (uint8_t interrupt, uint8_t reset, uint8_t chip_select);
 uint32_t        BSP_ConfigSystemCS              (uint8_t chip_select);
 uint32_t        BSP_SysNow                      (void);
 uint32_t        BSP_RegisterIRQCallback         (ADI_CB const *intCallback, void * hDevice);
 void            BSP_DisableIRQ                  (void);
 void            BSP_EnableIRQ                   (void);
+
 uint32_t        BSP_SetPinMDC                   (bool set);
 uint32_t        BSP_SetPinMDIO                  (bool set);
 uint16_t        BSP_GetPinMDInput               (void);
