@@ -19,6 +19,9 @@
 
 #include <Arduino.h>
 #include <SPI.h>
+#define ADIN2111
+#define SPI_OA_EN
+#define SPI_PROT_EN
 
 // Enable this define to print all spi messages, note this will severely impact performance
 //#define DEBUG_SPI
@@ -30,7 +33,7 @@ rtos::Semaphore updates(0);
 #endif
 
 #define RESET_DELAY       (50)
-#define AFTER_RESET_DELAY (500)
+#define AFTER_RESET_DELAY (100)
 
 static          ADI_CB gpfSpiCallback = NULL;
 static void     *gpSpiCBParam = NULL;
@@ -38,7 +41,7 @@ static void     *gpSpiCBParam = NULL;
 static          ADI_CB gpfGPIOIntCallback = NULL;
 static void     *gpGPIOIntCBParam = NULL;
 
-static uint8_t status_led_pin = LED_BUILTIN;
+//static uint8_t status_led_pin = LED_BUILTIN;
 static uint8_t interrupt_pin = DEFAULT_ETH_INT_Pin;
 static uint8_t reset_pin = DEFAULT_ETH_RESET_Pin;
 static uint8_t chip_select_pin = DEFAULT_ETH_SPI_CS_Pin;
@@ -66,7 +69,7 @@ void BSP_getConfigPins(uint16_t *value) { /* This board has no config pins, so o
 
 void BSP_disableInterrupts(void)
 {
-    noInterrupts();
+    //noInterrupts();
     
 }
 
@@ -129,7 +132,7 @@ static void bspLedToggle(uint16_t pin)
  */
 void BSP_HeartBeat(void)
 {
-    bspLedToggle(status_led_pin);
+    //bspLedToggle(status_led_pin);
 }
 
 /*
@@ -137,13 +140,13 @@ void BSP_HeartBeat(void)
  */
 void BSP_HeartBeatLed(bool on)
 {
-    bspLedSet(status_led_pin, on);
+    //bspLedSet(status_led_pin, on);
 }
 
 /* All LEDs toggle, used to indicate hardware failure on the board */
 void BSP_LedToggleAll(void)
 {
-    bspLedSet(status_led_pin, HIGH);
+    //bspLedSet(status_led_pin, HIGH);
 }
 
 uint32_t BSP_spi2_write_and_read(uint8_t *pBufferTx, uint8_t *pBufferRx, uint32_t nbBytes, bool useDma)
@@ -194,7 +197,7 @@ void BSP_EnableIRQ()
 
 void BSP_DisableIRQ()
 {
-    detachInterrupt(interrupt_pin);
+    //detachInterrupt(interrupt_pin);
 }
 
 //Function called on SPI transaction completion

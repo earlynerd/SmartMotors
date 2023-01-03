@@ -19,7 +19,7 @@
 #define ADI_SPI_OA_H
 
 #define SPI_OA_EN
-//#define SPI_PROT_EN
+#define SPI_PROT_EN
 
 #include "adi_mac.h"
 #include "hal.h"

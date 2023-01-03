@@ -11,6 +11,7 @@
                 "C:/SmartMotors/include",
                 "C:/SmartMotors/src",
                 "C:/SmartMotors/lib/ADIN21110 Arduino Library/src",
+                "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/lwIP_Ethernet/src",
                 "C:/SmartMotors/.pio/libdeps/pico3/SdFat - Adafruit Fork/src",
                 "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/SPI/src",
                 "C:/SmartMotors/.pio/libdeps/pico3/Adafruit TinyUSB Library/src",
@@ -51,7 +52,6 @@
                 "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/Wire/src",
                 "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/http-parser/src",
                 "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/lwIP_CYW43/src",
-                "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/lwIP_Ethernet/src",
                 "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/rp2040",
                 ""
             ],
@@ -61,6 +61,7 @@
                     "C:/SmartMotors/include",
                     "C:/SmartMotors/src",
                     "C:/SmartMotors/lib/ADIN21110 Arduino Library/src",
+                    "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/lwIP_Ethernet/src",
                     "C:/SmartMotors/.pio/libdeps/pico3/SdFat - Adafruit Fork/src",
                     "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/SPI/src",
                     "C:/SmartMotors/.pio/libdeps/pico3/Adafruit TinyUSB Library/src",
@@ -101,7 +102,6 @@
                     "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/Wire/src",
                     "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/http-parser/src",
                     "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/lwIP_CYW43/src",
-                    "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/lwIP_Ethernet/src",
                     "C:/Users/mmsyl/.platformio/packages/framework-arduinopico/libraries/rp2040",
                     ""
                 ]

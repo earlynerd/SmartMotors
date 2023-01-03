@@ -23,27 +23,32 @@ void SinglePairEthernet::linkCallback_C_Compatible(void *pCBParam, uint32_t Even
 }
 void SinglePairEthernet::txCallback_C_Compatible(void *pCBParam, uint32_t Event, void *pArg)
 {
+    
     adin2111_DeviceHandle_t device = reinterpret_cast<adin2111_DeviceHandle_t>(pCBParam);
     SinglePairEthernet *self = reinterpret_cast<SinglePairEthernet *>(adin2111_GetUserContext(device));
     if (self)
     {
         self->txCallback(pCBParam, Event, pArg);
     }
+    
 }
 void SinglePairEthernet::rxCallback_C_Compatible(void *pCBParam, uint32_t Event, void *pArg)
 {
+    
     adin2111_DeviceHandle_t device = reinterpret_cast<adin2111_DeviceHandle_t>(pCBParam);
     SinglePairEthernet *self = reinterpret_cast<SinglePairEthernet *>(adin2111_GetUserContext(device));
     if (self)
     {
         self->rxCallback(pCBParam, Event, pArg);
     }
+    
 }
 
 err_t SinglePairEthernet::LwIP_ADIN2111LinkOutput_C_Compatible(netif *net, pbuf *buf)
 {
-    LwIP_ADIN2111_t *eth = (LwIP_ADIN2111_t *)net->state;
-    adin2111_DeviceHandle_t device = eth->hDevice;
+    adin2111_DeviceHandle_t device = reinterpret_cast<adin2111_DeviceHandle_t>(net->state);
+    //LwIP_ADIN2111_t *eth = reinterpret_cast<LwIP_ADIN2111_t *>();
+    //adin2111_DeviceHandle_t device = eth->hDevice;
     SinglePairEthernet *self = reinterpret_cast<SinglePairEthernet *>(adin2111_GetUserContext(device));
     if (self)
     {
@@ -54,8 +59,9 @@ err_t SinglePairEthernet::LwIP_ADIN2111LinkOutput_C_Compatible(netif *net, pbuf 
 
 err_t SinglePairEthernet::LwipADIN2111Init_C_Compatible(netif* net)
 {
-    LwIP_ADIN2111_t *eth = (LwIP_ADIN2111_t *)net->state;
-    adin2111_DeviceHandle_t device = eth->hDevice;
+
+    adin2111_DeviceHandle_t device = reinterpret_cast<adin2111_DeviceHandle_t>(net->state);
+    //adin2111_DeviceHandle_t device = eth->hDevice;
     SinglePairEthernet *self = reinterpret_cast<SinglePairEthernet *>(adin2111_GetUserContext(device));
     if (self)
     {
@@ -72,12 +78,17 @@ err_t SinglePairEthernet::update()
 
 void SinglePairEthernet::txCallback(void *pCBParam, uint32_t Event, void *pArg)
 {
+    adin2111_DeviceHandle_t device = (adin2111_DeviceHandle_t)pCBParam;   
     txBufAvailable[0] = true;
+    adi_eth_BufDesc_t *pRxBufDesc;
+
+    pRxBufDesc = (adi_eth_BufDesc_t *)pArg;
 }
 
 void SinglePairEthernet::rxCallback(void *pCBParam, uint32_t Event, void *pArg)
 {
-    adin2111_DeviceHandle_t hDevice = (adin2111_DeviceHandle_t)pCBParam;
+    rxFramecount++;
+    adin2111_DeviceHandle_t device = (adin2111_DeviceHandle_t)pCBParam;
     adi_eth_BufDesc_t *pRxBufDesc;
 
     pRxBufDesc = (adi_eth_BufDesc_t *)pArg;
@@ -87,23 +98,25 @@ void SinglePairEthernet::rxCallback(void *pCBParam, uint32_t Event, void *pArg)
     int unicast = ((pRxBufDesc->pBuf[0] & 0x01) == 0);
 
     LINK_STATS_INC(link.recv);
-    MIB2_STATS_NETIF_ADD(netif, ifinoctets, p->tot_len);
+    MIB2_STATS_NETIF_ADD(device->netIf, ifinoctets, p->tot_len);
     if (unicast)
     {
-        MIB2_STATS_NETIF_INC(netif, ifinucastpkts);
+        MIB2_STATS_NETIF_INC(device->netIf, ifinucastpkts);
     }
     else
     {
-        MIB2_STATS_NETIF_INC(netif, ifinnucastpkts);
+        MIB2_STATS_NETIF_INC(device->netIf, ifinnucastpkts);
     }
 
-    writePQ(&pQ, pRxBufDesc->pBuf, frmLen);
+    writePQ((pQueue_t *)&pQ, pRxBufDesc->pBuf, frmLen);
     /* Since we're not doing anything with the Rx buffer in this example, */
     /* we are re-submitting it to the queue. */
     rxBufDesc[0].pBuf = &rxBuf[0][0];
     rxBufDesc[0].bufSize = MAX_FRAME_BUF_SIZE;
     rxBufDesc[0].cbFunc = rxCallback_C_Compatible;
-    adin2111_SubmitRxBuffer(hDevice, pRxBufDesc);
+    adin2111_SubmitRxBuffer(device, pRxBufDesc);
+    
+    //digitalWrite(25, LOW);
 }
 
 uint32_t SinglePairEthernet::adi_phy_GetLinkStatus(uint8_t *status)
@@ -133,12 +146,16 @@ void SinglePairEthernet::cbLinkChange(void *pCBParam, uint32_t Event, void *pArg
 
 bool SinglePairEthernet::begin(uint8_t *mac, uint8_t interrupt, uint8_t reset, uint8_t cs_pin)
 {
-    hDevice = &dev;
-    myConn.hDevice = hDevice;
-
+    myConn.hDevice = &dev;
+    //myConn.hDevice = hDevice;
+    //myConn.netIf.state = &myConn;
+    rxFramecount = 0;
+    txFramecount = 0;
     rxBufIndex = 0;
     txBufIndex = 0;
     adi_eth_Result_e result;
+    myConn.macAddress = mac;
+    
     boardDetails.mac[0] = mac[0];
     boardDetails.mac[1] = mac[1];
     boardDetails.mac[2] = mac[2];
@@ -163,11 +180,12 @@ bool SinglePairEthernet::begin(uint8_t *mac, uint8_t interrupt, uint8_t reset, u
 
     boardDetails.ip_addr_fixed = IP_FIXED; // IP_FIXED;//
 
-    myConn.hDevice = hDevice;
-    myConn.macAddress = boardDetails.mac;
+    //myConn.hDevice = hDevice;
+    //myConn.macAddress = boardDetails.mac;
     
  
-
+    
+    
     BSP_ConfigSystem( interrupt, reset, cs_pin);
     if(BSP_InitSystem())
     {
@@ -175,46 +193,51 @@ bool SinglePairEthernet::begin(uint8_t *mac, uint8_t interrupt, uint8_t reset, u
     }
 
     BSP_HWReset(true);
-
+    
+    //myConn.hDevice->pUserContext = (void *)this;
+   
     if(discoveradin2111()) Serial.println("adin init fail");
-
-    LwIP_StructInit(&myConn, boardDetails.mac);
-    LwIP_Init();
-    LwipADIN2111Init(&myConn.netIf);
-    LwIP_ADIN2111LinkInput(&myConn.netIf);
-    BSP_delayMs(500);
-    result = adin2111_SetUserContext(hDevice, (void *)this);
-    if (result != ADI_ETH_SUCCESS)
+    result = adin2111_SetUserContext(myConn.hDevice, (void *)this);
+     if (result != ADI_ETH_SUCCESS)
     {
         Serial.println("fail setting user context");
     }
+    LwIP_StructInit(&myConn, mac);
+    LwIP_Init();
+    //LwipADIN2111Init(&myConn.netIf);
+    
+    //LwIP_ADIN2111LinkInput(&myConn.netIf);
+    
+    BSP_delayMs(500);
+    
+    
 
     netif_set_link_up(&myConn.netIf);
     return (result == ADI_ETH_SUCCESS);
 }
 
-err_t SinglePairEthernet::LwipADIN2111Init(netif *netif)
+err_t SinglePairEthernet::LwipADIN2111Init(netif *netIf)
 {
    LwIP_ADIN2111_t* eth = &myConn;
 
-   netif->output = etharp_output;
-   netif->linkoutput = LwIP_ADIN2111LinkOutput_C_Compatible;
-   netif->name[0] = IFNAME0;
-   netif->name[1] = IFNAME1;
-   netif->mtu = ETHERNET_MTU;
-   netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
+   netIf->output = etharp_output;
+   netIf->linkoutput = LwIP_ADIN2111LinkOutput_C_Compatible;
+   netIf->name[0] = IFNAME0;
+   netIf->name[1] = IFNAME1;
+   netIf->mtu = ETHERNET_MTU;
+   netIf->flags |= NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_UP;
 
 #if LWIP_NETIF_HOSTNAME
     /* Initialize interface hostname */
-    netif->hostname = HOSTNAME;
+    netIf->hostname = HOSTNAME;
 #endif /* LWIP_NETIF_HOSTNAME */
 
 
-   netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_IGMP;
-   MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, NETIF_LINK_SPEED_IN_BPS);
+   netIf->flags |= NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_IGMP;
+   MIB2_INIT_NETIF(netIf, snmp_ifType_ethernet_csmacd, NETIF_LINK_SPEED_IN_BPS);
 
-   memcpy(netif->hwaddr, eth->macAddress, sizeof(netif->hwaddr));
-   netif->hwaddr_len = sizeof(netif->hwaddr);
+   memcpy(netIf->hwaddr, eth->macAddress, 6);
+   netIf->hwaddr_len = sizeof(netIf->hwaddr);
 
    return ERR_OK;
 }
@@ -224,7 +247,7 @@ adi_eth_Result_e SinglePairEthernet::ADIN2111Init(LwIP_ADIN2111_t* eth)
     adi_eth_Result_e        result;
  
     uint8_t  brcstMAC[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
-
+    
     adi_mac_AddressRule_t   addrRule;
     addrRule.VALUE16 = 0x0000;
     addrRule.TO_OTHER_PORT = 1;
@@ -232,7 +255,7 @@ adi_eth_Result_e SinglePairEthernet::ADIN2111Init(LwIP_ADIN2111_t* eth)
     addrRule.APPLY2PORT2 = 1;
     addrRule.TO_HOST = 1;
 
-    result = adin2111_AddAddressFilter(hDevice, brcstMAC, NULL, addrRule);
+    result = adin2111_AddAddressFilter(myConn.hDevice, brcstMAC, NULL, addrRule);
     DEBUG_RESULT("adin2111_AddAddressFilter", result, ADI_ETH_SUCCESS);
     if (result != ADI_ETH_SUCCESS)
     {
@@ -244,12 +267,17 @@ adi_eth_Result_e SinglePairEthernet::ADIN2111Init(LwIP_ADIN2111_t* eth)
     addrRule.APPLY2PORT2 = 1;
     addrRule.TO_HOST = 1;
 
-    result = adin2111_AddAddressFilter(hDevice, eth->macAddress, NULL, addrRule);
+    result = adin2111_AddAddressFilter(myConn.hDevice, eth->macAddress, NULL, addrRule);
     DEBUG_RESULT("adin2111_AddAddressFilter", result, ADI_ETH_SUCCESS);
     if (result != ADI_ETH_SUCCESS)
     {
         Serial.println("fail adin2111_AddAddressFilter 2");
     }
+    //adin2111_SetCutThroughMode(myConn.hDevice, true, true, true);
+    //adin2111_SetPortForwardMode(myConn.hDevice, ADIN2111_PORT_1, true);
+    //adin2111_SetPortForwardMode(myConn.hDevice, ADIN2111_PORT_2, true);
+    //adin2111_SetPromiscuousMode(hDevice, ADIN2111_PORT_1, true);
+    //adin2111_SetPromiscuousMode(hDevice, ADIN2111_PORT_2, true);
     //addrRule.TO_OTHER_PORT = 1;
     //result = adin2111_AddAddressFilter(*hDevice, brcstMAC, NULL, 0);
     //DEBUG_RESULT("adin2111_AddAddressFilter", result, ADI_ETH_SUCCESS);
@@ -257,10 +285,14 @@ adi_eth_Result_e SinglePairEthernet::ADIN2111Init(LwIP_ADIN2111_t* eth)
     //result = adin2111_AddAddressFilter(hDevice, eth->macAddress, NULL, 0);
    // DEBUG_RESULT("adin2111_AddAddressFilter", result, ADI_ETH_SUCCESS);
 
-    //result = adin2111_SyncConfig(hDevice);
-    //DEBUG_RESULT("adin2111_SyncConfig", result, ADI_ETH_SUCCESS);
-
-    result = adin2111_RegisterCallback(hDevice, linkCallback_C_Compatible, ADI_MAC_EVT_LINK_CHANGE);
+    result = adin2111_SyncConfig(myConn.hDevice);
+    DEBUG_RESULT("adin2111_SyncConfig", result, ADI_ETH_SUCCESS);
+    if (result != ADI_ETH_SUCCESS)
+    {
+        Serial.println("fail sync config");
+    }
+    result = adin2111_RegisterCallback(myConn.hDevice, linkCallback_C_Compatible, ADI_MAC_EVT_LINK_CHANGE);
+    
     DEBUG_RESULT("adin2111_RegisterCallback (ADI_MAC_EVT_LINK_CHANGE)", result, ADI_ETH_SUCCESS);
     if (result != ADI_ETH_SUCCESS)
     {
@@ -276,13 +308,14 @@ adi_eth_Result_e SinglePairEthernet::ADIN2111Init(LwIP_ADIN2111_t* eth)
         rxBufDesc[i].bufSize = MAX_FRAME_BUF_SIZE;
         rxBufDesc[i].cbFunc = rxCallback_C_Compatible;
 
-        result = adin2111_SubmitRxBuffer(hDevice, &rxBufDesc[i]);
+        result = adin2111_SubmitRxBuffer(myConn.hDevice, &rxBufDesc[i]);
     }
-    //adin2111_RegisterCallback(hDevice, rxCallback_C_Compatible, ADI_MAC_EVT_P1_RX_RDY );
-    result = adin2111_Enable(hDevice);
+    //adin2111_RegisterCallback(myConn.hDevice, rxCallback_C_Compatible, ADI_MAC_EVT_P1_RX_RDY );
+    result = adin2111_Enable(myConn.hDevice);
+    if (result != ADI_ETH_SUCCESS) Serial.println("Device enable error");
     DEBUG_RESULT("Device enable error", result, ADI_ETH_SUCCESS);
 
-    initQueue(&pQ);
+    initQueue((pQueue_t *)&pQ);
 
   return result;
 }
@@ -324,7 +357,7 @@ adin2111_DeviceHandle_t SinglePairEthernet::getDeviceHandle()
 
 void SinglePairEthernet::LwIP_Init( )
 {
-    LwIP_ADIN2111_t *eth = &myConn;
+    //LwIP_ADIN2111_t *eth = &myConn;
     ADIN2111Init(&myConn);
     lwip_init();
     //http_set_ssi_handler(ssiHandler_C_Compatible, NULL, 0);
@@ -340,30 +373,30 @@ void SinglePairEthernet::LwIP_Init( )
       IP4_ADDR(&mask,  boardDetails.net_mask[0], boardDetails.net_mask[1], boardDetails.net_mask[2], boardDetails.net_mask[3]);
       IP4_ADDR(&gw,   boardDetails.gateway[0], boardDetails.gateway[1], boardDetails.gateway[2], boardDetails.gateway[3]);
 
-      netif_add(&eth->netIf, &ip, &mask, &gw, eth,
+      netif_add(&myConn.netIf, &ip, &mask, &gw, myConn.hDevice,
       LwipADIN2111Init_C_Compatible, ethernet_input);
-
-      netif_set_default(&eth->netIf);
-      netif_set_up(&eth->netIf);
+      LwipADIN2111Init(&myConn.netIf);
+      netif_set_default(&myConn.netIf);
+      netif_set_up(&myConn.netIf);
     }
     else
     {
-      netif_add(&eth->netIf, &ipaddr_any, &ipaddr_any, &ipaddr_any, eth,
-      LwipADIN2111Init_C_Compatible, ethernet_input);
+        
+      netif_add_noaddr(&myConn.netIf, myConn.hDevice, LwipADIN2111Init_C_Compatible, ethernet_input);
+      LwipADIN2111Init(&myConn.netIf);
+      netif_set_default(&myConn.netIf);
+      netif_set_up(&myConn.netIf);
 
-      netif_set_default(&eth->netIf);
-      netif_set_up(&eth->netIf);
-
-      dhcp_start(&eth->netIf);
+      dhcp_start(&myConn.netIf);
     }
 }
 
 err_t SinglePairEthernet::low_level_output(netif *net, pbuf *p)
 {
-    LwIP_ADIN2111_t* eth = &myConn;
+    //LwIP_ADIN2111_t* eth = &myConn;
 
     
-
+    txFramecount++;
     struct pbuf *pp;
     uint16_t frameLen = 0;
     int total_len = 0;
@@ -387,7 +420,7 @@ err_t SinglePairEthernet::low_level_output(netif *net, pbuf *p)
     }
 
     LINK_STATS_INC(link.xmit);
-    MIB2_STATS_NETIF_ADD(netIf, ifoutoctets, total_len);
+    MIB2_STATS_NETIF_ADD(net, ifoutoctets, total_len);
 
     if(total_len < MIN_FRAME_SIZE) // Pad to minimum ETH size
     {
@@ -403,15 +436,15 @@ err_t SinglePairEthernet::low_level_output(netif *net, pbuf *p)
     if ((txBufDesc[txBufIndex].pBuf[0] & 1) != 0)
     {
       /* broadcast or multicast packet*/
-      MIB2_STATS_NETIF_INC(netif, ifoutnucastpkts);
+      MIB2_STATS_NETIF_INC(net, ifoutnucastpkts);
     }
     else
     {
       /* unicast packet */
-      MIB2_STATS_NETIF_INC(netif, ifoutucastpkts);
+      MIB2_STATS_NETIF_INC(net, ifoutucastpkts);
     }
 
-    while(adin2111_SubmitTxBuffer(hDevice, ADIN2111_TX_PORT_AUTO, &txBufDesc[txBufIndex]) == ADI_ETH_QUEUE_FULL)
+    while(adin2111_SubmitTxBuffer(myConn.hDevice, ADIN2111_TX_PORT_AUTO, &txBufDesc[txBufIndex]) == ADI_ETH_QUEUE_FULL)
     {
       ;;
     }
@@ -425,13 +458,13 @@ err_t SinglePairEthernet::low_level_output(netif *net, pbuf *p)
 
 err_t SinglePairEthernet::LwIP_ADIN2111LinkInput(netif* net)
 {
-    if (pDataAvailable(&pQ) == 0)
+    if (pDataAvailable((pQueue_t *)&pQ) == 0)
     {
       return ERR_OK;
     }
     else
     {
-      pbuf *p = (pbuf *)readPQ(&pQ);
+      pbuf *p = (pbuf *)readPQ((pQueue_t *)&pQ);
       if (p == NULL)
       {
         return ERR_MEM;
@@ -440,6 +473,7 @@ err_t SinglePairEthernet::LwIP_ADIN2111LinkInput(netif* net)
       if (net->input(p, net) != ERR_OK)
       {
         LWIP_DEBUGF(NETIF_DEBUG, ("IP input error\r\n"));
+        Serial.println("IP input error");
         pbuf_free(p);
         p = NULL;
       }
@@ -457,8 +491,8 @@ void SinglePairEthernet::writePQ(SinglePairEthernet::pQueue_t *p, uint8_t *ethFr
 {
     memcpy(&p->pData[p->nWrQ], ethFrame, lenEthFrame);
     p->lenData[p->nWrQ] = lenEthFrame;
-    p->nWrQ++;
-    p->nWrQ %= MAX_P_QUEUE;
+    p->nWrQ = (++(p->nWrQ)%MAX_P_QUEUE);
+    //p->nWrQ %= MAX_P_QUEUE;
 }
 
 void *SinglePairEthernet::readPQ(SinglePairEthernet::pQueue_t *p)
@@ -481,13 +515,15 @@ uint32_t SinglePairEthernet::discoveradin2111()
     /****** Driver Init *****/
     for (uint32_t i = 0; i < ADIN2111_INIT_ITER; i++)
     {
-        result = adin2111_Init(hDevice, &drvConfig);
+        result = adin2111_Init(myConn.hDevice, &drvConfig);
         if (result == ADI_ETH_SUCCESS)
         {
             error = 0;
             break;
         }
     }
-   // DEBUG_RESULT("No MACPHY device found", result, ADI_ETH_SUCCESS);
+    if (result != ADI_ETH_SUCCESS) Serial.println("No MACPHY device found");
+    DEBUG_RESULT("No MACPHY device found", result, ADI_ETH_SUCCESS);
+    
     return error;
 }

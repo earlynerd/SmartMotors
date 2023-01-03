@@ -1,7 +1,7 @@
 #include <Arduino.h>
-//#include "adin2111.h"
-//#include "lwIP_adin2111_app.h"
-//#include "lwip/timeouts.h"
+// #include "adin2111.h"
+// #include "lwIP_adin2111_app.h"
+// #include "lwip/timeouts.h"
 #include <SPI.h>
 #include "LwipEthernet.h"
 #include "lwipopts.h"
@@ -16,7 +16,7 @@
 #include "Adafruit_TinyUSB.h"
 #include "SinglePairEthernet.h"
 
-//#include "boardsupport.h"
+// #include "boardsupport.h"
 
 #define SPI0_MISO 16
 #define SPI0_MOSI 19
@@ -57,15 +57,15 @@
 
 SinglePairEthernet adin;
 
-byte deviceMAC[] = {0x08, 0x3A, 0x88, 0x5C, 0x18, 0x50};
-
-
+byte deviceMAC[6] = {0x08, 0x3A, 0x88, 0x5C, 0x18, 0x50};
+uint8_t *mac = deviceMAC;
 void printStatus(void);
 void printPhyState(adi_phy_State_e);
 void printMacState(adi_mac_State_e);
 void printMacSpiState(adi_mac_SpiState_e);
 void printPhyStats(adi_eth_MacStatCounters_t, adi_eth_MacStatCounters_t);
 void printOAerrorStats(adi_mac_OaErrorStats_t e);
+void printIP(ip_addr_t addr);
 
 void setup()
 {
@@ -80,8 +80,6 @@ void setup()
 
   pinMode(GPO1_PIN, OUTPUT);
   pinMode(GPO2_PIN, OUTPUT);
-
-  
 
   SPI.begin();
   delay(3000);
@@ -98,29 +96,36 @@ void setup()
   pinMode(GREEN_LED_PIN, OUTPUT);
   pinMode(RED_LED_PIN, OUTPUT);
   pinMode(BLUE_LED_PIN, OUTPUT);
-
-  if (adin.begin(deviceMAC, NET_IRQ_PIN, NET_RESET_PIN, (uint8_t)SPI0_CS))
-    Serial.println("ADIN init success");
-  else
-    Serial.println("ADIN Init fail");
-  printStatus();
 }
 
 uint32_t lastTx = 0;
 uint32_t statusInterval = 500;
 
-
 void loop()
 {
-  adin.update();
-  if (millis() - lastTx > statusInterval)
+  if (adin.begin(mac, NET_IRQ_PIN, NET_RESET_PIN, (uint8_t)SPI0_CS))
+    Serial.println("ADIN init success");
+  else
   {
-    digitalWrite(GREEN_LED_PIN, HIGH);
-    lastTx = millis();
-    printStatus();
-    digitalWrite(GREEN_LED_PIN, LOW);
+    Serial.println("ADIN Init fail");
+    for (;;)
+      yield();
   }
-  adin.update();
+
+  for (;;)
+  {
+
+    if (millis() - lastTx > statusInterval)
+    {
+      digitalWrite(GREEN_LED_PIN, HIGH);
+      lastTx = millis();
+      printStatus();
+      digitalWrite(GREEN_LED_PIN, LOW);
+    }
+    err_t error = adin.update();
+    if (error == ERR_MEM)
+      Serial.println("Error -  memory");
+  }
 }
 
 void printStatus()
@@ -129,7 +134,7 @@ void printStatus()
   adi_phy_Device_t *pPhyP1 = d->pPhyDevice[ADIN2111_PORT_1];
   adi_phy_Device_t *pPhyP2 = d->pPhyDevice[ADIN2111_PORT_2];
   adi_mac_Device_t *pMacTemp = d->pMacDevice;
-
+  
   Serial.print("ADIN2111 port 1 ");
   if (d->portEnabled[ADIN2111_PORT_1])
     Serial.println("enabled");
@@ -166,6 +171,15 @@ void printStatus()
   printPhyState(p1State);
   Serial.print("PHY 2 state: ");
   printPhyState(p2State);
+
+  Serial.print("PHY 1 IRQ mask: ");
+  Serial.println(pPhyP1->irqMask, HEX);
+  Serial.print("PHY 2 IRQ mask: ");
+  Serial.println(pPhyP2->irqMask, HEX);
+
+  if(pPhyP1->irqPending) Serial.println("PHY 1 IRQ pending");
+  if(pPhyP2->irqPending) Serial.println("PHY 2 IRQ pending");
+
   Serial.print("Phy port 1 link status: ");
   if (pPhyP1->linkStatus == adi_phy_LinkStatus_e::ADI_PHY_LINK_STATUS_UP)
     Serial.println("UP");
@@ -180,13 +194,13 @@ void printStatus()
   Serial.println(pPhyP1->stats.linkDropped);
   Serial.print("Phy 2 link dropped counter: ");
   Serial.println(pPhyP2->stats.linkDropped);
-  
+
   Serial.print("OA Tx frame Queue index: ");
   Serial.println(d->pMacDevice->oaTxCurBufIdx);
   Serial.print("OA Rx frame Queue index: ");
   Serial.println(d->pMacDevice->oaRxCurBufIdx);
 
-  adi_mac_OaErrorStats_t e = d->pMacDevice->oaErrorStats;     
+  adi_mac_OaErrorStats_t e = d->pMacDevice->oaErrorStats;
   printOAerrorStats(e);
 
   adi_eth_MacStatCounters_t port1Stats;
@@ -195,6 +209,65 @@ void printStatus()
   adin2111_GetStatCounters(d, ADIN2111_PORT_2, &port2Stats);
   printPhyStats(port1Stats, port2Stats);
   Serial.println();
+
+  uint8_t count = 1;
+  netif *net = netif_get_by_index(1);
+  while (net != NULL)
+  {
+    Serial.print("netif ");
+    Serial.print(count);
+    Serial.print(": ");
+    Serial.print(net->name[0]);
+    Serial.print(net->name[1]);
+    Serial.println();
+    
+
+    // net = netif_get_by_index(1);
+    ip_addr_t ip = net->ip_addr;
+    Serial.print("IP: ");
+    printIP(ip);
+    ip = net->gw;
+    Serial.print("Gateway: ");
+    printIP(ip);
+    ip = net->netmask;
+    Serial.print("Netmask: ");
+    printIP(ip);
+
+    Serial.print("HW address: ");
+    for (int i = 0; i < 6; i++)
+    {
+      if (net->hwaddr[i] < 0xf)
+        Serial.print("0");
+      Serial.print(net->hwaddr[i], HEX);
+      if (i < 5)
+        Serial.print(":");
+      else
+        Serial.println();
+    }
+    // memcpy(net->hwaddr, mac, 6);
+
+    if (netif_is_up(net))
+      Serial.println("netif is UP");
+    else
+    {
+      Serial.println("netif is DOWN");
+      // netif_set_up(net);
+    }
+    if (netif_is_link_up(net))
+      Serial.println("netif Link is UP");
+    else
+      Serial.println("netif Link is DOWN");
+    //net = netif_get_by_index(count);
+    net = net->next;
+    count++;
+  }
+  Serial.println();
+  Serial.print("rx count: ");
+  Serial.print(adin.rxFramecount);
+  Serial.print(", tx count: ");
+  Serial.println(adin.txFramecount);
+  if(digitalRead(NET_IRQ_PIN)) Serial.println("IRQ pin HIGH");
+  else Serial.println("IRQ pin LOW");
 }
 
 /*
@@ -216,7 +289,7 @@ RX_DROP_FILT;   !< Rx dropped due to filtering count.
 */
 void printPhyStats(adi_eth_MacStatCounters_t p1, adi_eth_MacStatCounters_t p2)
 {
-  adi_eth_MacStatCounters_t* stats[2] = {&p1, &p2};
+  adi_eth_MacStatCounters_t *stats[2] = {&p1, &p2};
   const char names[15][16] =
       {
           {"Port\t\0"},
@@ -240,11 +313,11 @@ void printPhyStats(adi_eth_MacStatCounters_t p1, adi_eth_MacStatCounters_t p2)
     Serial.print(names[i]);
   }
   Serial.println();
-  
+
   for (int i = 0; i < 2; i++)
   {
     Serial.print("Port ");
-    Serial.print(i+1);
+    Serial.print(i + 1);
     Serial.print("\t");
     Serial.print(stats[i]->RX_FRM_CNT);
     Serial.print("\t");
@@ -387,4 +460,18 @@ void printOAerrorStats(adi_mac_OaErrorStats_t e)
   Serial.print("syncErrorCount: ");
   Serial.print(e.syncErrorCount);
   Serial.println();
+}
+
+void printIP(ip_addr_t a)
+{
+
+  uint32_t b = a.addr;
+  for (int i = 0; i < 4; i++)
+  {
+    Serial.print((b >> (8 * i)) & 0xff);
+    if (i < 3)
+      Serial.print(".");
+    else
+      Serial.println();
+  }
 }

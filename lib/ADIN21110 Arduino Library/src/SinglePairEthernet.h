@@ -35,8 +35,8 @@
 #define MAX_P_QUEUE 5
 
 /* Define name of the network interface. */
-#define IFNAME0 'e'
-#define IFNAME1 '0'
+#define IFNAME0 (char)'e'
+#define IFNAME1 (char)'0'
 #define HOSTNAME "ADI_10BASE-T1L_Demo"
 #define NETIF_LINK_SPEED_IN_BPS 10000000
 
@@ -62,7 +62,7 @@ class SinglePairEthernet
 {
 private:
     adin2111_DeviceStruct_t dev;
-    adin2111_DeviceHandle_t hDevice;
+    //adin2111_DeviceHandle_t hDevice;
     
     uint8_t devMem[ADIN2111_DEVICE_SIZE];
     adin2111_DriverConfig_t drvConfig = {
@@ -98,11 +98,15 @@ private:
     ///////////////////////////////////////
 
     LwIP_ADIN2111_t myConn;
+    HAL_ALIGNED_PRAGMA(4)
     uint8_t txBuf[BUFF_DESC_COUNT][MAX_FRAME_BUF_SIZE] HAL_ALIGNED_ATTRIBUTE(4);
     adi_eth_BufDesc_t txBufDesc[BUFF_DESC_COUNT];
     bool txBufAvailable[BUFF_DESC_COUNT];
     int txBufIndex;
-    
+
+    #define MAX_PQ 1
+
+    HAL_ALIGNED_PRAGMA(4)
     uint8_t rxBuf[BUFF_DESC_COUNT][MAX_FRAME_BUF_SIZE] HAL_ALIGNED_ATTRIBUTE(4);
     adi_eth_BufDesc_t rxBufDesc[BUFF_DESC_COUNT];
     int rxBufIndex;
@@ -114,7 +118,7 @@ private:
   
 
     HAL_ALIGNED_PRAGMA(4)
-    pQueue_t pQ HAL_ALIGNED_ATTRIBUTE(4);
+    volatile pQueue_t pQ HAL_ALIGNED_ATTRIBUTE(4);
     err_t low_level_output(netif *, pbuf *);
     void initQueue(pQueue_t *);
     void *readPQ(pQueue_t *);
@@ -131,6 +135,7 @@ private:
     adi_eth_LinkStatus_e linkState;
     uint32_t discoveradin2111();
     void cbLinkChange(void *pCBParam, uint32_t Event, void *pArg);
+    err_t LwIP_ADIN2111LinkInput(netif *net);
     ////////////////////////////////////////
     
 
@@ -146,7 +151,7 @@ private:
 
     uint8_t macAddr[SPE_MAC_SIZE];
     uint8_t destMacAddr[SPE_MAC_SIZE];
-    err_t LwIP_ADIN2111LinkInput(netif *net);
+    
     
 
 
@@ -186,8 +191,9 @@ public:
     void rxCallback(void *pCBParam, uint32_t Event, void *pArg);
     void linkCallback(void *pCBParam, uint32_t Event, void *pArg);
     err_t LwIP_ADIN2111LinkOutput(netif* net, pbuf* buf);
-    err_t netif_linkoutput_fn(netif*, pbuf* );
-
+    //err_t netif_linkoutput_fn(netif*, pbuf* );
+    volatile uint32_t rxFramecount;
+    volatile uint32_t txFramecount;
 };
 
 #endif
